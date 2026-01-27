@@ -21,7 +21,16 @@
  *  info() retourne l'information de la voiture dans le format suivant : "make model : year"
  */
 function CarFactory(make) {
-    return { };
+    let carsBuilt = 0;
+    
+    const carBuilder = model => year => {
+        carsBuilt++;
+        return {make, model, year, info: () =>`${make} ${model} : ${year}` }
+    }
+    return { 
+        carsBuilt: () => carsBuilt,
+        carBuilder: carBuilder,
+    };
 }
 
 /// Exemples d'utilisation
@@ -55,4 +64,12 @@ const newFordFocus = CarUpgrader(focus, 2023);
 console.log(newFordFocus.year); // 2023
 console.log(newFordFocus.info()); // Ford Focus : 2019
 /// Question : pourquoi est-ce que le nom est-il toujours Ford Focus : 2019
+/// Réponse : Parce que info utilise l’année figée au moment de la création 
+// de l’objet (le paramètre year capturé par la closure), 
+// et pas la propriété car.year que l’on modifie dans CarUpgrader.
+
 /// Comment peut-on règler ce problème ?
+///Réponse: Il faut que info lise l’année depuis l’objet (la propriété year)
+///  à chaque appel, au lieu de lire le paramètre capturé.
+newFordFocus.info =  function () { return  `${this.make} ${this.model} : ${this.year}`; }
+console.log(newFordFocus.info());
