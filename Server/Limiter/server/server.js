@@ -41,7 +41,53 @@ app.get('/token', (req, res) => {
 
 // TODO : remettre la limite du jeton à MAX_REQUESTS si le jeton existe
 app.patch("/token/reset", (req, res) => {
+    const token = req.get("X-AUTH");
+    if (limits.has(token)) {
+        limits.set(token, {count: MAX_REQUESTS });
+        res.set("X-LIMIT", MAX_REQUESTS);
+        res.status(204).send();
+        return; 
+    }
     res.status(404).send("Ce jeton n'existe pas");
+});
+
+app.use('/books', (req, res, next) => {
+    const token = req.get("X-AUTH");
+    if (!token || !limits.has(token)) {
+        return res.status(403).send();
+    }
+    const newLimit = limits.get(token);
+
+    requestTimeoutHandler(newLimit);
+
+    if  (newLimit.count -1 < 0) {
+        return res.status(429).send();
+    }
+
+    newLimit.count --;
+    res.set("X-LIMIT", newLimit.count);
+    next();
+})
+
+app.get('/books', (req, res) => {
+    const maxCount = parseInt(req.query.maxCount);
+    if (maxCount) {
+        return res.send(books.slice(0, maxCount));
+    }
+    res.send(books);
+});
+
+app.get('/books/:id', (req, res) => {
+    const random = req.query.random;
+    if (random === 'true') {
+        const randomIndex = Math.floor(Math.random() * books.length + 1);
+        return res.send([books[randomIndex]]);
+    }
+    const book = books.find(x => x.id === parseInt(req.params.id));
+    if (!book){
+        return res.status(404).send("Ce livre n'existe pas");
+    }
+    res.send(book);
 });
 
 app.delete('/reset', (req, res) => {
@@ -62,5 +108,11 @@ app.listen(PORT, () => {
  * @returns l'objet newLimit mis à jour
  */
 function requestTimeoutHandler(newLimit) {
+    const accessTime = new Date();
+    const timeDiff = newLimit.firstAccess ? Math.floor((accessTime - newLimit.firstAccess) / 1000) : MAX_TIMEOUT;
+    if (timeDiff >= MAX_TIMEOUT) {
+        newLimit.count = MAX_REQUESTS;
+        newLimit.firstAccess = accessTime;
+    }
     return newLimit;
 }
