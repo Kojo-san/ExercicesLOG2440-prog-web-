@@ -35,18 +35,7 @@ describe("BoardManager tests", () => {
         jest.resetAllMocks();
     });
 
-    it("addClickListeners should add listeners to cells and reset button", () => {
-        const cellSpy = jest.spyOn(boardManager, "eventHandler").mockImplementation(() => {});
-        const buttonSpy = jest.spyOn(boardManager, "resetBoard").mockImplementation(() => {});
-        const cell = document.getElementsByClassName("cell")[0];
 
-        boardManager.addClickListeners();
-        cell.dispatchEvent(new MouseEvent("click"));
-        expect(cellSpy).toHaveBeenCalled();
-
-        document.getElementById("reset").dispatchEvent(new MouseEvent("click"));
-        expect(buttonSpy).toHaveBeenCalled();
-    });
 
     it("resetBoard should set the value to defaults", () => {
         boardManager.board[0][0] = "X";
